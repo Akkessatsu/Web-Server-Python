@@ -4,76 +4,70 @@ import cgitb, cgi
 cgitb.enable(display=0, logdir="./")
 
 form = cgi.FieldStorage()
-recieved = form.getvalue('valor')
+received = form.getvalue('valor')
 unity1 = form.getvalue('unidade1')
 unity2 = form.getvalue('unidade2')
-
-def analysingValue(value):
+unities = {
+    'seg': 'Segundos',
+    'min': 'Minutos',
+    'hr': 'Horas'
+}
+consts_of_conversion = { 
+    0: {
+        'seg': 1,
+        'min': 60,
+        'hr': 3600
+        },
+    1: {
+        'seg': 1,
+        'min': 1/60,
+        'hr': 1/3600
+    }
+}
+def analyzing_value(value):
     if value:
         return int(value)
     else:
         return -1
 
 try:
-    value = analysingValue(recieved)
+    value = analyzing_value(received)
 
 except:
     value = 'typeError'
 
-def convertUnits(value, unity1, unity2):
-    if (value != -1 and value != 'typeError'):
-        if (unity1 == unity2 and unity1 != 'sel'):
-            if (unity1 == 'seg'):
-                result = 'Unidades iguais => {:.2f} Segundos'.format(value)
+def convert_units(value, unity1, unity2):
 
-            elif (unity1 == 'min'):
-                result = 'Unidade iguais => {:.2f} Minutos'.format(value)
+    if value != -1 and value != 'typeError':
 
-            else:
-                result = 'Unidade iguais => {:.2f} Horas'.format(value)
+        if unity1 == unity2 and unity1 != 'sel':
+            result = f'Unidades iguais => {value:.2f} {unities[unity1]}'
 
-        elif (unity1 != 'sel' and unity2 =='sel'):
+        try:
+            value_in_seg = value * consts_of_conversion[0][unity1] 
+            converted = value_in_seg * consts_of_conversion[1][unity2]
+
+            result = f'{value} {unities[unity1]} = {converted} {unities[unity2]}'
+
+        except:
             result = 'Erro: Selecione uma unidade !'
 
-        elif unity1 == 'seg':
-            if (unity2 == 'min'):
-                result = '{} Segundos = {:.2f} Minutos'.format(value, (value / 60))
+    elif value == 'typeError':
+        result = 'Erro: Tipo de Valor Inesperado !'
 
-            elif (unity2 == 'hr'):
-                result = '{} Segundos = {:.4f} Horas'.format(value, (value / 3600))
-
-        elif unity1 == 'min':
-            if (unity2 == 'seg'):
-                result = '{} Minutos = {:.2f} Segundos'.format(value, (value * 60))
-
-            elif (unity2 == 'hr'):
-                result = '{} Minutos = {:.2f} Horas'.format(value, (value / 60))
-
-        elif unity1 == 'hr':
-            if (unity2 == 'seg'):
-                result = '{} Horas = {:.2f} Segundos'.format(value, (value * 3600))
-
-            elif (unity2 == 'min'):
-                result = '{} Horas = {:.2f} Minutos'.format(value, (value * 60))
-
-        else:
-            result = 'Erro: Selecione uma unidade !'
-
-    elif(value == 'typeError'):
-        result = 'Erro: Tipo de Valor inesperado !'
-
-    else:
-        result = 'Erro: Campos sem Valores !'
-
+    else: 
+        result = 'Erro: Campo sem valores !'
+        
     return result
 
 try:
-    resultFinal = convertUnits(value, unity1, unity2)
+    result_final = convert_units(value, unity1, unity2)
 
 except:
-    resultFinal = 'Erro Inesperado'
+    result_final = 'Erro Inesperado'
 
-print("Content-type:text/html\r\n\r\n")
+print("Content-Type:text/html")
+print()
 print("<html>")
 print("<head>")
 print('<meta charset="UTF-8">')
@@ -85,7 +79,7 @@ print("<body>")
 print("<section>")
 print('<div class ="main">')
 print('<h1>Resultado:</h1>')
-print("<h2>{}</h2>".format(resultFinal))
+print(f'<h2>{result_final}</h2>')
 print('<a class="back" href="../tempo.html">Voltar</a>')
 print("</div>")
 print("</section>")

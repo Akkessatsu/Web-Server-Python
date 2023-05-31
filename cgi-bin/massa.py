@@ -4,76 +4,103 @@ import cgitb, cgi
 cgitb.enable(display=0, logdir="./")
 
 form = cgi.FieldStorage()
-recieved = form.getvalue('valor')
+received = form.getvalue('valor')
 unity1 = form.getvalue('unidade1')
 unity2 = form.getvalue('unidade2')
-resultFinal = None
+result_final = None
 
-def analysingValue(value):
+unities = {
+    'mg': 'Miligramas',
+    'gr': 'Gramas',
+    'kg': 'Kilogramas'
+}
+consts_of_conversion = { 
+    0: {
+        'mg': 10 ** (-3),
+        'gr':  1  ,
+        'kg': 10 ** 3
+        },
+    1: {
+        'mg': 10 ** 3,
+        'gr': 1,
+        'kg': 10 ** (-3)
+    }
+}
+
+
+def analyzing_value(
+    value
+    ) -> int:
+    """Retorna o valor como parâmetro se o mesmo for válido (não vazio)
+    
+        Args:
+            value: 
+                Valor a ser testado obtido por meio do método getvalue do
+                formulário html
+        Returns:
+            Se o valor for não vazio, é convertido para float e retornado.
+            Se for um valor vazio, é retornado -1
+    """
     if value:
-        return int(value)
+        return float(value)
     else:
         return -1
+    
+def convert_units(
+    value: float,
+    unity1: str,
+    unity2: str
+    ) -> str:
+    """Retorna o resultado da conversão de unidades
+
+        Args:
+            value: Valor a ser convertido
+            unity1: Unidade de medida do valor a ser convertido
+            unity2: Unidade de medida da conversão
+
+        Returns:
+            Uma string que relaciona o valor e unidades de medidas 
+            originais com o resultado da conversão. Por exemplo:
+
+            '600 Segundos = 10.0 Minutos'
+
+            Em que à esquerda temos o valor original e à direita o 
+            resultado da conversão
+    """
+    if value != -1 and value != 'typeError':
+        if unity1 == unity2 and unity1 != 'sel':
+            result = f'Unidades iguais => {value:.2f} {unities[unity1]}'
+        try:
+            value_in_grams = value * consts_of_conversion[0][unity1] #Valor em gramas
+            converted = value_in_grams * consts_of_conversion[1][unity2]
+
+            result = f'{value} {unities[unity1]} = {converted} {unities[unity2]}'
+        except:
+            result = 'Erro: Selecione uma unidade !'
+
+    elif value == 'typeError':
+        result = 'Erro: Tipo de Valor Inesperado !'
+
+    else: 
+        result = 'Erro: Campo sem valores !'
+        
+    return result
 
 try:
-    value = analysingValue(recieved)
+    value = analyzing_value(received)
 
 except:
     value = 'typeError'
 
-def convertUnits(value, unity1, unity2):
-    if(value!=-1 and value != 'typeError'):
-        if (unity1 == unity2 and unity1 != 'sel'):
-            if(unity1 == 'kg'):
-                result = 'Unidades iguais => {:.2f} Quilogramas'.format(value)
-
-            elif(unity1 == 'g'):
-                result = 'Unidade iguais => {:.2f} Gramas'.format(value)
-            else:
-                result = 'Unidade iguais => {:.2f} Miligramas'.format(value)
-
-        elif (unity1 != 'sel' and unity2 =='sel'):
-            result = 'Erro: Selecione uma unidade !'
-
-        elif unity1 == 'kg':
-            if (unity2 == 'gr'):
-                result = '{} Quilogramas = {:.2f} Gramas'.format(value, (value * 1000))
-
-            elif (unity2 == 'mg'):
-                result = '{} Quilogramas = {:.2f} Miligramas'.format(value, (value * 1000000))
-
-        elif unity1 == 'gr':
-            if (unity2 == 'kg'):
-                result = '{} Gramas = {:.4f} Quilogramas'.format(value, (value / 1000))
-
-            elif (unity2 == 'mg'):
-                result = '{} Gramas = {:.2f} Miligramas'.format(value, (value * 1000))
-
-        elif unity1 == 'mg':
-            if (unity2 == 'kg'):
-                result = '{} Miligramas = {:.6f} Quilogramas'.format(value, (value / 1000000))
-
-            elif (unity2 == 'gr'):
-                result = '{} Miligramas = {:.4f} Gramas'.format(value, (value / 1000))
-
-        else:
-            result = 'Erro: Selecione uma unidade !'
-
-    elif (value == 'typeError'):
-        result = 'Erro: Tipo de Valor inesperado !'
-
-    else:
-        result = 'Erro: Campos sem valores !'
-
-    return result
 
 try:
-    resultFinal = convertUnits(value, unity1, unity2)
+    result_final = convert_units(value, unity1, unity2)
 
 except:
-    resultFinal = 'Erro Inesperado'
+    result_final = 'Erro Inesperado'
 
-print("Content-type:text/html\r\n\r\n")
+print("Content-Type: text/html")
+print()
 print("<html>")
 print("<head>")
 print('<meta charset="UTF-8">')
@@ -85,7 +112,7 @@ print("<body>")
 print("<section>")
 print('<div class ="main">')
 print('<h1>Resultado:</h1>')
-print("<h2>{}</h2>".format(resultFinal))
+print(f'<h2>{result_final}</h2>')
 print('<a class="back" href="../massa.html">Voltar</a>')
 print("</div>")
 print("</section>")
