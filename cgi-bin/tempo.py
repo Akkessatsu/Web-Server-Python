@@ -5,50 +5,92 @@ cgitb.enable(display=0, logdir="./")
 
 form = cgi.FieldStorage()
 received = form.getvalue('valor')
-unity1 = form.getvalue('unidade1')
-unity2 = form.getvalue('unidade2')
+unit1 = form.getvalue('unidade1')
+unit2 = form.getvalue('unidade2')
 unities = {
     'seg': 'Segundos',
     'min': 'Minutos',
     'hr': 'Horas'
 }
 consts_of_conversion = { 
-    0: {
+    'to_seg': {
         'seg': 1,
         'min': 60,
         'hr': 3600
         },
-    1: {
+    'from_seg': {
         'seg': 1,
         'min': 1/60,
         'hr': 1/3600
     }
 }
 def analyzing_value(value):
+    """Returns the argument if it is not void
+    
+        Args:
+            value: 
+                Value to be tested obtained through the getvalue method of
+                html form
+                
+        Returns:
+            If the value is not void, it is converted to int and returned
+            If it is void, return -1
+    """
     if value:
         return int(value)
     else:
         return -1
 
-try:
-    value = analyzing_value(received)
+def convert_to_seg(value: int, unit: str) -> float:
+    """Returns the quantity in seconds
+    
+    Args:
+        value: The value of the quantity to be converted
+        unity: The unit of the quantity to be converted to seconds
+    """
+    return value * consts_of_conversion['to_seg'][unit] 
 
-except:
-    value = 'typeError'
+def convert_from_seg(value: int, unit: str) -> float:
+    """Returns the value in seconds to other unit of time
+    
+    Args:
+        value: The value of the quantity in seconds to be converted
+        unity: The unit of the quantity to be converted
+    """
+    return value * consts_of_conversion['from_seg'][unit]
 
-def convert_units(value, unity1, unity2):
+def convert_units(value: int, unit1: str, unit2: str):
+    """Returns a string with the result of the conversion
 
+    Args:
+        value: The value of the quantity to be converted
+        unit1: The unit of the original quantity
+        unit2: The unit of the converted quantity
+
+    Returns:
+        A string containing the information of the conversion
+        in the format:
+        
+        '[Original Value] [Original Unit] = [Converted Value] [Unit of conversion]'
+        
+        Example:
+        
+        '300 Segundos = 5.00 Minutos'
+        
+    Raises:
+        KeyError: An error occoured when a passed unit
+        is not a valid key for the dict 'consts_of_conversion'
+    """
     if value != -1 and value != 'typeError':
 
-        if unity1 == unity2 and unity1 != 'sel':
-            result = f'Unidades iguais => {value:.2f} {unities[unity1]}'
+        if unit1 == unit2 and unit1 != 'sel':
+            result = f'Unidades iguais => {value:.2f} {unities[unit1]}'
 
         try:
-            value_in_seg = value * consts_of_conversion[0][unity1] 
-            converted = value_in_seg * consts_of_conversion[1][unity2]
+            value_in_seg = convert_to_seg(value, unit1)
+            converted = convert_from_seg(value_in_seg, unit2)
 
-            result = f'{value} {unities[unity1]} = {converted} {unities[unity2]}'
-
+            result = f'{value} {unities[unit1]} = {converted:.2f} {unities[unit2]}'
         except:
             result = 'Erro: Selecione uma unidade !'
 
@@ -61,8 +103,12 @@ def convert_units(value, unity1, unity2):
     return result
 
 try:
-    result_final = convert_units(value, unity1, unity2)
-
+    value = analyzing_value(received)
+except:
+    value = 'typeError'
+    
+try:
+    result_final = convert_units(value, unit1, unit2)
 except:
     result_final = 'Erro Inesperado'
 

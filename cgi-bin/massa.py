@@ -5,9 +5,9 @@ cgitb.enable(display=0, logdir="./")
 
 form = cgi.FieldStorage()
 received = form.getvalue('valor')
-unity1 = form.getvalue('unidade1')
-unity2 = form.getvalue('unidade2')
-result_final = None
+unit1 = form.getvalue('unidade1')
+unit2 = form.getvalue('unidade2')
+result_final: str
 
 unities = {
     'mg': 'Miligramas',
@@ -15,12 +15,12 @@ unities = {
     'kg': 'Kilogramas'
 }
 consts_of_conversion = { 
-    0: {
+    'to_gram': {
         'mg': 10 ** (-3),
         'gr':  1  ,
         'kg': 10 ** 3
         },
-    1: {
+    'from_gram': {
         'mg': 10 ** 3,
         'gr': 1,
         'kg': 10 ** (-3)
@@ -28,74 +28,90 @@ consts_of_conversion = {
 }
 
 
-def analyzing_value(
-    value
-    ) -> int:
-    """Retorna o valor como parâmetro se o mesmo for válido (não vazio)
+def analyzing_value(value) -> int:
+    """Returns the argument if it is not void
     
         Args:
             value: 
-                Valor a ser testado obtido por meio do método getvalue do
-                formulário html
+                Value to be tested obtained through the getvalue method of
+                html form
+                
         Returns:
-            Se o valor for não vazio, é convertido para float e retornado.
-            Se for um valor vazio, é retornado -1
+            If the value is not void, it is converted to int and returned
+            If it is void, return -1
     """
     if value:
-        return float(value)
+        return int(value)
     else:
         return -1
+
+def convert_to_gram(value: int, unit: str) -> float:
+    """Returns the quantity in grams
     
-def convert_units(
-    value: float,
-    unity1: str,
-    unity2: str
-    ) -> str:
-    """Retorna o resultado da conversão de unidades
+    Args:
+        value: The value of the quantity to be converted
+        unity: The unit of the quantity to be converted to grams
+    """
+    return value * consts_of_conversion['to_gram'][unit]
 
-        Args:
-            value: Valor a ser convertido
-            unity1: Unidade de medida do valor a ser convertido
-            unity2: Unidade de medida da conversão
+def convert_from_gram(value: int, unit: str) -> float:
+    """Returns the value in grams to other unit of mass
+    
+    Args:
+        value: The value of the quantity in grams to be converted
+        unity: The unit of the quantity to be converted
+    """
+    return value * consts_of_conversion['from_gram'][unit]
 
-        Returns:
-            Uma string que relaciona o valor e unidades de medidas 
-            originais com o resultado da conversão. Por exemplo:
+def convert_units(value: int, unit1: str, unit2: str) -> str:
+    """Returns a string with the result of the conversion
 
-            '600 Segundos = 10.0 Minutos'
+    Args:
+        value: The value of the quantity to be converted
+        unit1: The unit of the original quantity
+        unit2: The unit of the converted quantity
 
-            Em que à esquerda temos o valor original e à direita o 
-            resultado da conversão
+    Returns:
+        A string containing the information of the conversion
+        in the format:
+        
+        '[Original Value] [Original Unit] = [Converted Value] [Unit of conversion]'
+        
+        Example:
+        
+        '10 Quilogramas = 10000.00 Gramas'
+        
+    Raises:
+        KeyError: An error occoured when a passed unit
+        is not a valid key for the dict 'consts_of_conversion'
     """
     if value != -1 and value != 'typeError':
-        if unity1 == unity2 and unity1 != 'sel':
-            result = f'Unidades iguais => {value:.2f} {unities[unity1]}'
+        
+        if unit1 == unit2 and unit1 != 'sel':
+            return f'Unidades iguais => {value:.2f} {unities[unit1]}'
+        
         try:
-            value_in_grams = value * consts_of_conversion[0][unity1] #Valor em gramas
-            converted = value_in_grams * consts_of_conversion[1][unity2]
-
-            result = f'{value} {unities[unity1]} = {converted} {unities[unity2]}'
+            value_in_grams = convert_to_gram(value, unit1)
+            converted = convert_from_gram(value_in_grams, unit2)
+            
+            return  f'{value} {unities[unit1]} = {converted} {unities[unit2]}'
         except:
-            result = 'Erro: Selecione uma unidade !'
+            return 'Erro: Selecione uma unidade !'
 
     elif value == 'typeError':
-        result = 'Erro: Tipo de Valor Inesperado !'
-
+        return 'Erro: Tipo de Valor Inesperado !'
+    
     else: 
-        result = 'Erro: Campo sem valores !'
+        return 'Erro: Campo sem valores !'
         
-    return result
 
 try:
     value = analyzing_value(received)
-
 except:
     value = 'typeError'
-
-
+    
 try:
-    result_final = convert_units(value, unity1, unity2)
-
+    result_final = convert_units(value, unit1, unit2)
 except:
     result_final = 'Erro Inesperado'
 
